@@ -1,0 +1,16 @@
+const CONFIG={hubspot:{enabled:false,portalId:'21748317',businessUnitId:'2569937'},awin:{enabled:false,advertiserId:'23465'}};
+const KEY='metriclab-consent-v1',panel=document.querySelector('#painel-cookies'),analytics=document.querySelector('#consent-analytics'),marketing=document.querySelector('#consent-marketing'),options=document.querySelector('#opcoes-cookies'),save=document.querySelector('#salvar-cookies'),accept=document.querySelector('#aceitar-cookies'),reject=document.querySelector('#recusar-cookies');
+function read(){try{return JSON.parse(localStorage.getItem(KEY))}catch{return null}}
+function script(id,src,attrs={}){if(document.getElementById(id))return;const s=document.createElement('script');s.id=id;s.src=src;s.async=true;Object.entries(attrs).forEach(([k,v])=>s.setAttribute(k,v));document.head.appendChild(s)}
+function loadHubSpot(){if(!CONFIG.hubspot.enabled)return;window._hsp=window._hsp||[];window._hsp.push(['setBusinessUnitId',Number(CONFIG.hubspot.businessUnitId)]);script('hs-banner',`https://js.hs-banner.com/${CONFIG.hubspot.portalId}/${CONFIG.hubspot.businessUnitId}.js`);script('hs-analytics',`https://js.hs-analytics.net/analytics/1793962800000/${CONFIG.hubspot.portalId}.js`);script('hs-interactives','https://js.hubspot.com/web-interactives-embed.js');script('hs-forms','https://js.hscollectedforms.net/collectedforms.js')}
+function loadAwin(){if(CONFIG.awin.enabled)script('awin-tracking','vendor/23465.js')}
+function track(name){if(!read()?.analytics)return;const event={event:name,page:location.pathname,timestamp:new Date().toISOString()};window.dataLayer=window.dataLayer||[];window.dataLayer.push(event);console.info('[evento demonstrativo]',event)}
+function apply(c){if(c.analytics){loadHubSpot();track('consent_analytics_granted')}if(c.marketing){loadAwin();track('consent_marketing_granted')}}
+function saveConsent(c){const v={essential:true,analytics:!!c.analytics,marketing:!!c.marketing,savedAt:new Date().toISOString()};localStorage.setItem(KEY,JSON.stringify(v));apply(v);panel.hidden=true}
+document.querySelector('#ano').textContent=new Date().getFullYear();
+document.querySelectorAll('[data-track]').forEach(el=>el.addEventListener('click',()=>track('click_'+el.dataset.track)));
+document.querySelector('#form-contato').addEventListener('submit',e=>{e.preventDefault();track('contact_form_submit');document.querySelector('#mensagem-form').textContent='Formulário demonstrativo enviado. Nenhum dado foi transmitido.';e.currentTarget.reset()});
+document.querySelector('#abrir-preferencias').addEventListener('click',()=>{const c=read()||{};analytics.checked=!!c.analytics;marketing.checked=!!c.marketing;options.hidden=false;save.hidden=false;accept.hidden=true;reject.hidden=true;panel.hidden=false});
+document.querySelector('#detalhes-cookies').addEventListener('click',()=>{options.hidden=!options.hidden;save.hidden=!options.hidden;accept.hidden=!options.hidden;reject.hidden=!options.hidden});
+accept.addEventListener('click',()=>saveConsent({analytics:true,marketing:true}));reject.addEventListener('click',()=>saveConsent({analytics:false,marketing:false}));save.addEventListener('click',()=>saveConsent({analytics:analytics.checked,marketing:marketing.checked}));
+const current=read();if(current)apply(current);else panel.hidden=false;
